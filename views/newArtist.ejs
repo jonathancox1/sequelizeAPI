@@ -1,0 +1,10 @@
+<% include('partials/page_start.ejs'); %>
+
+<h1><% title %></h1>
+<form action="/newArtist" method="POST">
+    <label for="artist">Add an Artist</label>
+    <input type="text" id="artist" name="artist">
+    <button type="submit">Send</button>
+</form>
+
+<% include('partials/page_end.ejs'); %>
