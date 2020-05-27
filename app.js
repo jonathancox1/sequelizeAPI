@@ -69,6 +69,20 @@ app.post('/api/create/artist', (req, res) => {
         })
 })
 
+// get all albums from specific artist
+app.get('/api/artist/:id/albums', (req, res) => {
+    db.Artist.findByPk(req.params.id)
+        .then((artist) => {
+            return artist.getAlbums();
+        })
+        .catch(err => {
+            console.log(`There has been an error ${err}`);
+            res.json({ message: `${err}` });
+        })
+        .then((result) =>
+            res.json(result));
+})
+
 // create a new album
 app.post('/api/create/artist/:artist_id/album', (req, res) => {
     db.Artist.findByPk(req.params.artist_id)
@@ -111,12 +125,23 @@ app.delete('/api/delete/artist/:id', (req, res) => {
         where: { id: Number(req.params.id) }
     })
         .then(deletedArtist => {
-            console.log(`${deletedArtist.name} has been deleted`)
+            console.log(`${deletedArtist} has been deleted`)
             res.json(deletedArtist);
         })
 
 })
 
+// restore an artist
+// app.delete('/api/restore/artist/:id', (req, res) => {
+//     db.Artist.restore({
+//         where: { id: Number(req.params.id) }
+//     })
+//         .then(deletedArtist => {
+//             console.log(`${deletedArtist.name} has been deleted`)
+//             res.json(deletedArtist);
+//         })
+
+// })
 
 
 
