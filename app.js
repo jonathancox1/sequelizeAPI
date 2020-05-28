@@ -1,5 +1,8 @@
 const express = require('express');
 const bodyParser = require('body-parser');
+const bcrypt = require('bcrypt');
+const session = require('express-session');
+const cookieParser = require('cookie-parser');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -10,8 +13,82 @@ app.set('views', 'views');
 app.use(express.static('public'))
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }))
+app.use(cookieParser());
+app.use(session({
+    secret: 'secret',
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+        // secure: false,
+        maxAge: 31536000000 // in  milliseconds
+    }
+}));
 
 const db = require('./models');
+
+// // checks if there is a session cookie saved
+// function checkAuth(req, res, next) {
+//     if (req.session.user) {
+//         next();
+//     } else {
+//         res.redirect('/signIn.ejs');
+//     }
+// }
+// destroys session cookie
+app.get('/logout', (req, res) => {
+    req.session.destroy();
+    res.redirect('/');
+})
+
+// newUser route renders newUser.ejs
+app.get('/newUser', (req, res, next) => {
+    res.render('newUser.ejs')
+})
+app.post('/newUser', (req, res) => {
+    const { username, email, password } = req.body;
+    bcrypt.hash(password, 10, (err, hash) => {
+        db.Users.create({
+            username: username,
+            email: email,
+            password: hash,
+        })
+            .then((result) => {
+                res.redirect('/')
+            })
+    })
+})
+
+// signIn route renders signIn.ejs
+app.get('/', (req, res, next) => {
+    res.render('signIn.ejs', {
+        title: 'Welcome',
+        user: req.session.user || null,
+    })
+})
+
+// lachlan's method
+app.post('/signIn', (req, res) => {
+    const { username, password } = req.body;
+    // accepts an object, where username in the Users table is = username from req.body
+    db.Users.findOne({ where: { username } })
+        .then(user => {
+            bcrypt.compare(password, user.password, (err, match) => {
+                if (match) {
+                    req.session.user = user;
+                    res.redirect('/welcome')
+                } else {
+                    res.send('Incorrect Password')
+                }
+            })
+        })
+        .catch(() => {
+            res.send('username not found')
+        })
+})
+
+app.get('/welcome', (req, res) => {
+    res.render('welcome.ejs')
+})
 
 // get all artists 
 app.get('/api/artist/all/', (req, res) => {
